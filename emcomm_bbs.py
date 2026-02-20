@@ -2045,8 +2045,10 @@ class NewsApp:
             self.welfare_watcher = None
             self.welfare_enabled = False
             self.welfare_is_running = False
-        
+
+        self.load_settings()    # Load persisted settings before building GUI
         self.setup_gui()
+        self.apply_saved_settings()  # Fill widgets with loaded values
     
     def setup_gui(self):
         """Create the GUI elements with tabbed interface"""
@@ -2118,19 +2120,19 @@ class NewsApp:
         left_col = ttk.Frame(output_frame)
         left_col.grid(row=0, column=0, sticky=(tk.W, tk.N), padx=(0, 20))
         
-        ttk.Checkbutton(left_col, text="News Summary", variable=self.generate_news_var).grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="News Summary", variable=self.generate_news_var, command=self.save_settings).grid(row=0, column=0, sticky=tk.W, pady=2)
         
         # Weather with Select All/None
         weather_frame = ttk.Frame(left_col)
         weather_frame.grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(weather_frame, text="Weather Forecasts", variable=self.generate_weather_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(weather_frame, text="Weather Forecasts", variable=self.generate_weather_var, command=self.save_settings).pack(side=tk.LEFT)
         ttk.Button(weather_frame, text="All", command=self.select_all_regions, width=6).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(weather_frame, text="None", command=self.select_no_regions, width=6).pack(side=tk.LEFT)
         
-        ttk.Checkbutton(left_col, text="Space Weather", variable=self.generate_space_var).grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Emergency Alerts", variable=self.generate_emergency_var).grid(row=3, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Power Outages", variable=self.generate_power_var).grid(row=4, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Twitter Feed", variable=self.generate_twitter_var).grid(row=5, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Space Weather", variable=self.generate_space_var, command=self.save_settings).grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Emergency Alerts", variable=self.generate_emergency_var, command=self.save_settings).grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Power Outages", variable=self.generate_power_var, command=self.save_settings).grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Twitter Feed", variable=self.generate_twitter_var, command=self.save_settings).grid(row=5, column=0, sticky=tk.W, pady=2)
         
         # Nextdoor checkbox (if available)
         if self.nextdoor_enabled:
@@ -2155,7 +2157,7 @@ class NewsApp:
         }
         
         for i in range(1, 11):
-            ttk.Checkbutton(right_col, text=region_info[i], variable=self.weather_regions[i]).grid(row=i-1, column=0, sticky=tk.W, pady=1)
+            ttk.Checkbutton(right_col, text=region_info[i], variable=self.weather_regions[i], command=self.save_settings).grid(row=i-1, column=0, sticky=tk.W, pady=1)
         
         # Control buttons
         control_frame = ttk.Frame(parent)
@@ -2395,6 +2397,13 @@ class NewsApp:
                 font=('Helvetica', 8),
                 foreground='gray'
             ).grid(row=5, column=0, columnspan=7, sticky=tk.W, pady=(5, 0))
+
+            # Register vars for save_settings()
+            self._time_window_vars = [
+                (self.welfare_window1_name, self.welfare_window1_start, self.welfare_window1_end),
+                (self.welfare_window2_name, self.welfare_window2_start, self.welfare_window2_end),
+                (self.welfare_window3_name, self.welfare_window3_start, self.welfare_window3_end),
+            ]
     
     def apply_welfare_windows(self):
         """Apply welfare board time window configuration"""
@@ -2473,6 +2482,7 @@ class NewsApp:
             
             messagebox.showinfo("Success", f"Time windows updated!\n\nActive windows:\n" + 
                               "\n".join([f"• {w['name']}: {w['start']}-{w['end']}" for w in windows]))
+            self.save_settings()
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to apply time windows: {e}")
@@ -2591,6 +2601,249 @@ class NewsApp:
         # Update current window periodically
         self.update_welfare_window()
     
+    # ── Settings persistence ──────────────────────────────────────────────────
+
+    def _settings_path(self):
+        """Return path to the user config file (same folder as the script)."""
+        return Path(__file__).parent / "emcomm_bbs_config.json"
+
+    def save_settings(self):
+        """Persist all user-configurable settings to emcomm_bbs_config.json."""
+        # Twitter handles
+        try:
+            twitter_handles = self.twitter_handles_entry.get().strip()
+        except Exception:
+            twitter_handles = ""
+
+        # Nextdoor key and ZIP codes
+        try:
+            nextdoor_key = self.nextdoor_key_entry.get().strip()
+        except Exception:
+            nextdoor_key = ""
+        try:
+            nextdoor_zips = self.nextdoor_zips_entry.get().strip()
+        except Exception:
+            nextdoor_zips = ""
+
+        # Time windows
+        time_windows = []
+        try:
+            for name_var, start_var, end_var in self._time_window_vars:
+                name  = name_var.get().strip()
+                start = start_var.get().strip()
+                end   = end_var.get().strip()
+                if name:
+                    time_windows.append({"name": name, "start": start, "end": end})
+        except Exception:
+            pass
+
+        # Checkboxes (actual var names are generate_*_var)
+        def _get_var(name):
+            v = getattr(self, name, None)
+            return bool(v.get()) if v else True
+
+        config = {
+            "save_directory":    self.save_directory,
+            "anthropic_api_key": self.summarizer.api_key or "",
+            "twitter_token":     getattr(self, "_twitter_token", ""),
+            "twitter_handles":   twitter_handles,
+            "nextdoor_key":      nextdoor_key,
+            "nextdoor_zips":     nextdoor_zips,
+            "time_windows":      time_windows,
+            "weather_regions":   self._get_selected_regions(),
+            "checkboxes": {
+                "news":      _get_var("generate_news_var"),
+                "weather":   _get_var("generate_weather_var"),
+                "space":     _get_var("generate_space_var"),
+                "emergency": _get_var("generate_emergency_var"),
+                "twitter":   _get_var("generate_twitter_var"),
+                "power":     _get_var("generate_power_var"),
+                "nextdoor":  _get_var("generate_nextdoor_var"),
+            }
+        }
+        try:
+            with open(self._settings_path(), "w") as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            self.log(f"⚠ Could not save settings: {e}")
+
+    def _get_selected_regions(self):
+        """Return list of selected FEMA region numbers."""
+        selected = []
+        try:
+            for i in range(1, 11):
+                if self.weather_regions[i].get():
+                    selected.append(i)
+        except Exception:
+            pass
+        return selected
+
+    def select_all_regions(self):
+        """Select all weather regions"""
+        for i in range(1, 11):
+            self.weather_regions[i].set(True)
+        self.log("Selected all weather regions")
+        self.save_settings()
+
+    def select_no_regions(self):
+        """Deselect all weather regions"""
+        for i in range(1, 11):
+            self.weather_regions[i].set(False)
+        self.log("Deselected all weather regions")
+        self.save_settings()
+
+    def select_directory(self):
+        """Select save directory"""
+        directory = filedialog.askdirectory(initialdir=self.save_directory)
+        if directory:
+            self.save_directory = directory
+            self.dir_label.config(text=directory)
+            self.log(f"Save directory changed to: {directory}")
+            self.save_settings()
+
+    def cleanup_old_files(self):
+        """Delete old TXT files - keeps only the newest set"""
+        try:
+            file_prefixes = ['news_', 'wx_R', 'space_', 'emergency_', 'tweets_']
+            files_deleted = 0
+            for filename in os.listdir(self.save_directory):
+                if filename.endswith('.txt'):
+                    if any(filename.startswith(p) for p in file_prefixes):
+                        filepath = os.path.join(self.save_directory, filename)
+                        try:
+                            os.remove(filepath)
+                            files_deleted += 1
+                        except:
+                            pass
+            if files_deleted > 0:
+                self.log(f"✓ Removed {files_deleted} old file(s) - keeping only newest set")
+        except Exception as e:
+            self.log(f"Warning: Could not clean up old files: {e}")
+
+    def load_settings(self):
+        """Load saved settings from emcomm_bbs_config.json on startup."""
+        path = self._settings_path()
+        if not path.exists():
+            return  # First run — nothing to load
+        try:
+            with open(path) as f:
+                config = json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load saved settings ({e})")
+            return
+
+        # Restore save directory
+        saved_dir = config.get("save_directory", "")
+        if saved_dir and Path(saved_dir).exists():
+            self.save_directory = saved_dir
+
+        # Restore Anthropic API key
+        api_key = config.get("anthropic_api_key", "")
+        if api_key:
+            self.summarizer.set_api_key(api_key)
+            self._saved_api_key = api_key          # used to pre-fill the entry widget
+
+        # Restore Twitter token
+        token = config.get("twitter_token", "")
+        if token:
+            self._saved_twitter_token = token       # used to pre-fill and re-apply
+
+        # Store everything else for apply_saved_settings() called after GUI is built
+        self._saved_config = config
+
+    def apply_saved_settings(self):
+        """Called after GUI is built — fills widgets with persisted values."""
+        cfg = getattr(self, "_saved_config", {})
+        if not cfg:
+            return
+
+        # API key entry
+        try:
+            saved_key = getattr(self, "_saved_api_key", "")
+            if saved_key:
+                self.api_key_entry.insert(0, saved_key)
+        except Exception:
+            pass
+
+        # Twitter token entry + handles + re-apply fetcher
+        try:
+            token = getattr(self, "_saved_twitter_token", "")
+            handles_str = cfg.get("twitter_handles", "")
+            if token:
+                self.twitter_token_entry.insert(0, token)
+                self._twitter_token = token
+            if handles_str:
+                self.twitter_handles_entry.delete(0, tk.END)
+                self.twitter_handles_entry.insert(0, handles_str)
+            if token and SocialMediaEmergencyFetcher:
+                handles = [h.strip() for h in handles_str.split(",") if h.strip()] if handles_str else None
+                self.twitter_fetcher = SocialMediaEmergencyFetcher(token, handles)
+        except Exception:
+            pass
+
+        # Nextdoor key and ZIP codes
+        try:
+            nd_key = cfg.get("nextdoor_key", "")
+            nd_zips = cfg.get("nextdoor_zips", "")
+            if nd_key:
+                self.nextdoor_key_entry.insert(0, nd_key)
+            if nd_zips:
+                self.nextdoor_zips_entry.delete(0, tk.END)
+                self.nextdoor_zips_entry.insert(0, nd_zips)
+            if nd_key and nd_zips and NextdoorFetcher:
+                zip_codes = [z.strip() for z in nd_zips.split(",") if z.strip()]
+                self.nextdoor_fetcher = NextdoorFetcher(nd_key, zip_codes)
+        except Exception:
+            pass
+
+        # Save directory label
+        try:
+            self.dir_label.config(text=self.save_directory)
+        except Exception:
+            pass
+
+        # Weather region checkboxes — first clear all, then restore saved selection
+        try:
+            saved_regions = cfg.get("weather_regions", [])
+            if saved_regions:
+                for i in range(1, 11):
+                    self.weather_regions[i].set(i in saved_regions)
+        except Exception:
+            pass
+
+        # Output checkboxes (vars are named generate_*_var)
+        try:
+            boxes = cfg.get("checkboxes", {})
+            for key, var_name in [
+                ("news",      "generate_news_var"),
+                ("weather",   "generate_weather_var"),
+                ("space",     "generate_space_var"),
+                ("emergency", "generate_emergency_var"),
+                ("twitter",   "generate_twitter_var"),
+                ("power",     "generate_power_var"),
+                ("nextdoor",  "generate_nextdoor_var"),
+            ]:
+                if key in boxes and hasattr(self, var_name):
+                    getattr(self, var_name).set(bool(boxes[key]))
+        except Exception:
+            pass
+
+        # Time windows
+        try:
+            windows = cfg.get("time_windows", [])
+            for i, win in enumerate(windows[:3]):
+                name_var, start_var, end_var = self._time_window_vars[i]
+                name_var.delete(0, tk.END)
+                name_var.insert(0, win.get("name", ""))
+                start_var.delete(0, tk.END)
+                start_var.insert(0, win.get("start", "00:00"))
+                end_var.delete(0, tk.END)
+                end_var.insert(0, win.get("end", "23:59"))
+        except Exception:
+            pass
+
+    # ── End settings persistence ──────────────────────────────────────────────
+
     def browse_directory(self):
         """Browse for save directory"""
         directory = filedialog.askdirectory(initialdir=self.save_directory)
@@ -2598,13 +2851,15 @@ class NewsApp:
             self.save_directory = directory
             self.dir_label.config(text=directory)
             self.log(f"Save directory changed to: {directory}")
-    
+            self.save_settings()
+
     def set_api_key(self):
         """Set the Anthropic API key"""
         api_key = self.api_key_entry.get().strip()
         if api_key:
             self.summarizer.set_api_key(api_key)
             self.log("✓ Anthropic API key set (AI summaries enabled)")
+            self.save_settings()
         else:
             self.log("Please enter an API key")
     
@@ -2635,7 +2890,9 @@ class NewsApp:
             
             # Auto-enable Twitter checkbox
             self.generate_twitter_var.set(True)
-            
+            self._twitter_token = token
+            self.save_settings()
+
         except Exception as e:
             self.log(f"✗ Error setting Twitter token: {e}")
             self.twitter_fetcher = None
@@ -2666,6 +2923,7 @@ class NewsApp:
                     self.twitter_fetcher = SocialMediaEmergencyFetcher(token, custom_handles)
                     self.log(f"✓ Updated Twitter handles: monitoring {len(custom_handles)} accounts")
                     self.log(f"  Accounts: {', '.join(custom_handles[:8])}{'...' if len(custom_handles) > 8 else ''}")
+                    self.save_settings()
                 else:
                     self.log("Please set Twitter token first")
             except Exception as e:
@@ -2703,9 +2961,10 @@ class NewsApp:
             self.nextdoor_fetcher = NextdoorFetcher(api_key, zip_codes)
             self.log(f"✓ Nextdoor configured: monitoring {len(zip_codes)} ZIP code(s)")
             self.log(f"  ZIP codes: {', '.join(zip_codes)}")
-            
+
             # Enable the checkbox automatically
             self.generate_nextdoor_var.set(True)
+            self.save_settings()
             
         except Exception as e:
             self.log(f"✗ Error configuring Nextdoor: {e}")
@@ -2738,19 +2997,19 @@ class NewsApp:
         left_col = ttk.Frame(output_frame)
         left_col.grid(row=0, column=0, sticky=(tk.W, tk.N), padx=(0, 20))
         
-        ttk.Checkbutton(left_col, text="News Summary", variable=self.generate_news_var).grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="News Summary", variable=self.generate_news_var, command=self.save_settings).grid(row=0, column=0, sticky=tk.W, pady=2)
         
         # Weather with Select All/None
         weather_frame = ttk.Frame(left_col)
         weather_frame.grid(row=1, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(weather_frame, text="Weather Forecasts", variable=self.generate_weather_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(weather_frame, text="Weather Forecasts", variable=self.generate_weather_var, command=self.save_settings).pack(side=tk.LEFT)
         ttk.Button(weather_frame, text="Select All", command=self.select_all_regions, width=10).pack(side=tk.LEFT, padx=(5, 2))
         ttk.Button(weather_frame, text="None", command=self.select_no_regions, width=6).pack(side=tk.LEFT)
         
-        ttk.Checkbutton(left_col, text="Space Weather", variable=self.generate_space_var).grid(row=2, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Emergency Alerts", variable=self.generate_emergency_var).grid(row=3, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Power Outages", variable=self.generate_power_var).grid(row=4, column=0, sticky=tk.W, pady=2)
-        ttk.Checkbutton(left_col, text="Twitter Feed", variable=self.generate_twitter_var).grid(row=5, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Space Weather", variable=self.generate_space_var, command=self.save_settings).grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Emergency Alerts", variable=self.generate_emergency_var, command=self.save_settings).grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Power Outages", variable=self.generate_power_var, command=self.save_settings).grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Checkbutton(left_col, text="Twitter Feed", variable=self.generate_twitter_var, command=self.save_settings).grid(row=5, column=0, sticky=tk.W, pady=2)
         
         # Nextdoor checkbox (if available)
         if self.nextdoor_enabled:
@@ -2775,7 +3034,7 @@ class NewsApp:
         }
         
         for i in range(1, 11):
-            ttk.Checkbutton(right_col, text=region_info[i], variable=self.weather_regions[i]).grid(row=i-1, column=0, sticky=tk.W, pady=1)
+            ttk.Checkbutton(right_col, text=region_info[i], variable=self.weather_regions[i], command=self.save_settings).grid(row=i-1, column=0, sticky=tk.W, pady=1)
         
         # Control buttons
         control_frame = ttk.Frame(parent)
@@ -2833,160 +3092,6 @@ class NewsApp:
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
-    
-    def set_api_key(self):
-        """Set the API key"""
-        api_key = self.api_key_entry.get().strip()
-        if api_key:
-            self.summarizer.set_api_key(api_key)
-            self.log("API key configured successfully.")
-            self.status_label.config(text="API key set - AI summaries enabled")
-        else:
-            self.log("Please enter a valid API key.")
-    
-    def set_twitter_token(self):
-        """Set Twitter API bearer token"""
-        if not self.emergency_enabled:
-            self.log("Emergency module not available")
-            return
-        
-        token = self.twitter_token_entry.get().strip()
-        if token and SocialMediaEmergencyFetcher:
-            try:
-                # Get custom handles from entry field
-                handles_str = self.twitter_handles_entry.get().strip()
-                if handles_str:
-                    # Parse comma-separated handles
-                    custom_handles = [h.strip() for h in handles_str.split(',') if h.strip()]
-                    self.twitter_fetcher = SocialMediaEmergencyFetcher(token, custom_handles)
-                    self.log("Twitter API bearer token configured successfully.")
-                    self.log(f"Token starts with: {token[:20]}...")
-                    self.log(f"Monitoring {len(custom_handles)} Twitter accounts: {', '.join(custom_handles[:5])}{'...' if len(custom_handles) > 5 else ''}")
-                else:
-                    self.twitter_fetcher = SocialMediaEmergencyFetcher(token)
-                    self.log("Twitter API bearer token configured with default accounts.")
-                    self.log(f"Token starts with: {token[:20]}...")
-                self.status_label.config(text="Twitter API set - Emergency tweets enabled")
-            except Exception as e:
-                self.log(f"Error setting Twitter token: {e}")
-        else:
-            self.log("Please enter a valid Twitter bearer token.")
-    
-    def update_twitter_handles(self):
-        """Update the list of Twitter handles to monitor"""
-        if not self.emergency_enabled:
-            self.log("Emergency module not available")
-            return
-        
-        handles_str = self.twitter_handles_entry.get().strip()
-        if not handles_str:
-            self.log("Please enter at least one Twitter handle")
-            return
-        
-        # Parse handles
-        custom_handles = [h.strip() for h in handles_str.split(',') if h.strip()]
-        
-        if not custom_handles:
-            self.log("No valid handles found")
-            return
-        
-        # Update the fetcher if it exists
-        if self.twitter_fetcher:
-            try:
-                token = self.twitter_token_entry.get().strip()
-                if token:
-                    self.twitter_fetcher = SocialMediaEmergencyFetcher(token, custom_handles)
-                    self.log(f"✓ Updated Twitter handles: monitoring {len(custom_handles)} accounts")
-                    self.log(f"  Accounts: {', '.join(custom_handles[:8])}{'...' if len(custom_handles) > 8 else ''}")
-                else:
-                    self.log("Please set Twitter token first")
-            except Exception as e:
-                self.log(f"Error updating handles: {e}")
-        else:
-            self.log(f"Twitter handles saved ({len(custom_handles)} accounts). Set token to enable.")
-            self.log(f"  Accounts: {', '.join(custom_handles[:8])}{'...' if len(custom_handles) > 8 else ''}")
-    
-    def set_nextdoor_config(self):
-        """Configure Nextdoor API key and ZIP codes"""
-        if not self.nextdoor_enabled:
-            self.log("Nextdoor module not available")
-            return
-        
-        api_key = self.nextdoor_key_entry.get().strip()
-        zips_str = self.nextdoor_zips_entry.get().strip()
-        
-        # Parse ZIP codes
-        zip_codes = [z.strip() for z in zips_str.split(',') if z.strip()]
-        
-        if not api_key and not zip_codes:
-            self.log("⚠ Please enter Nextdoor API key and ZIP codes")
-            return
-        
-        if not api_key:
-            self.log("⚠ Please enter Nextdoor API key")
-            return
-        
-        if not zip_codes:
-            self.log("⚠ Please enter at least one ZIP code")
-            return
-        
-        try:
-            # Create Nextdoor fetcher
-            self.nextdoor_fetcher = NextdoorFetcher(api_key, zip_codes)
-            self.log(f"✓ Nextdoor configured: monitoring {len(zip_codes)} ZIP code(s)")
-            self.log(f"  ZIP codes: {', '.join(zip_codes)}")
-            
-            # Enable the checkbox automatically
-            self.generate_nextdoor_var.set(True)
-            
-        except Exception as e:
-            self.log(f"✗ Error configuring Nextdoor: {e}")
-            self.nextdoor_fetcher = None
-    
-    def select_all_regions(self):
-        """Select all weather regions"""
-        for i in range(1, 11):
-            self.weather_regions[i].set(True)
-        self.log("Selected all weather regions")
-    
-    def select_no_regions(self):
-        """Deselect all weather regions"""
-        for i in range(1, 11):
-            self.weather_regions[i].set(False)
-        self.log("Deselected all weather regions")
-    
-    def select_directory(self):
-        """Select save directory"""
-        directory = filedialog.askdirectory(initialdir=self.save_directory)
-        if directory:
-            self.save_directory = directory
-            self.dir_label.config(text=directory)
-            self.log(f"Save directory changed to: {directory}")
-    
-    def cleanup_old_files(self):
-        """Delete old TXT files - keeps only the newest set"""
-        try:
-            # Delete all old report files to keep only the newest set
-            file_prefixes = ['news_', 'wx_R', 'space_', 'emergency_', 'tweets_']
-            files_deleted = 0
-            
-            for filename in os.listdir(self.save_directory):
-                if filename.endswith('.txt'):
-                    # Check if it's one of our report files
-                    is_report_file = any(filename.startswith(prefix) for prefix in file_prefixes)
-                    
-                    if is_report_file:
-                        filepath = os.path.join(self.save_directory, filename)
-                        try:
-                            os.remove(filepath)
-                            files_deleted += 1
-                        except:
-                            pass  # File might be in use
-            
-            if files_deleted > 0:
-                self.log(f"✓ Removed {files_deleted} old file(s) - keeping only newest set")
-        except Exception as e:
-            self.log(f"Warning: Could not clean up old files: {e}")
     
     def generate_summary_pdf(self):
         """Generate a news summary TXT file (optimized for radio transmission)"""
