@@ -1,0 +1,768 @@
+================================================================
+         EMCOMM BBS - USER GUIDE
+         All-In-One Edition
+================================================================
+
+This guide covers every feature of the Emcomm BBS application,
+including the Main tab, Settings tab, and Welfare Board tab.
+
+----------------------------------------------------------------
+TABLE OF CONTENTS
+----------------------------------------------------------------
+1. Overview
+2. First-Time Setup
+3. Main Tab
+   3a. Selecting What to Generate
+   3b. Weather Region Selection
+   3c. Running the App
+   3d. Power Outage Report (DOE/ORNL ODIN)
+4. Settings Tab
+   4a. Anthropic API Key (AI Summaries)
+   4b. Twitter Bearer Token
+   4c. Twitter Accounts to Monitor
+   4d. Nextdoor Configuration
+   4e. Output Directory
+   4f. Update Intervals
+   4g. Welfare Board Time Windows
+5. Welfare Board Tab
+   5a. Folder Configuration
+   5b. Monitoring Status
+   5c. Starting and Stopping Monitoring
+   5d. Viewing the Board
+   5e. The Check-in Template
+6. How Welfare Check-ins Work (End-to-End)
+   6a. Submitting a Check-in via VarAC
+   6b. Valid Statuses
+   6c. Power Status Field
+   6d. Duplicate and Update Handling
+   6e. Output Files Generated
+7. Output File Reference
+8. Troubleshooting
+
+
+================================================================
+1. OVERVIEW
+================================================================
+
+Emcomm BBS is a desktop application that runs on Windows and
+serves as a digital bulletin board system for emergency
+communications. It does two main things:
+
+  - Fetches and summarizes external data (news, weather, space
+    weather, emergency alerts, Twitter/X feeds, and Nextdoor
+    posts) and saves them as radio-ready text files for
+    distribution over VarAC or other digital modes.
+
+  - Operates a Welfare Board that monitors an incoming folder
+    for check-in files received over VarAC, validates them,
+    and produces a running summary (TXT, HTML, and CSV) of
+    who has checked in, their status, and their messages.
+
+All output files are saved to the VarAC BBS directory
+(C:\VarAC BBS by default) so they can be served directly
+to stations requesting content over the air.
+
+
+================================================================
+2. FIRST-TIME SETUP
+================================================================
+
+Step 1. Launch the app by running emcomm_bbs.py or the
+        RUN.bat file in the application folder.
+
+Step 2. Go to the Settings tab. You will configure your API
+        keys, output folder, and welfare time windows here
+        before doing anything else.
+
+Step 3. Set your Anthropic API key if you want AI-generated
+        news summaries. Without it, the app will still collect
+        headlines, but there will be no executive summary.
+
+Step 4. If you want emergency tweets, enter your Twitter
+        Bearer Token and click Set.
+
+Step 5. Confirm the Output Directory points to your VarAC BBS
+        folder. The default is C:\VarAC BBS, which the app
+        creates automatically if it does not already exist.
+
+Step 6. Go to the Welfare Board tab. Set the Monitor Folder
+        to the VarAC "Files in" directory where incoming
+        welfare check-in files will be dropped. The app
+        pre-populates this with your VarAC path.
+
+Step 7. Back on the Settings tab, confirm or adjust the
+        Welfare Board Time Windows. By default the system
+        accepts check-ins 24 hours a day (00:00-23:59). Click
+        "Apply Time Windows" after making any changes.
+
+Step 8. You are ready to go. Return to the Main tab.
+
+
+================================================================
+3. MAIN TAB
+================================================================
+
+The Main tab is your primary control panel. It lets you choose
+what content to generate and start or stop the service.
+
+----------------------------------------------------------------
+3a. SELECTING WHAT TO GENERATE
+----------------------------------------------------------------
+
+The "Select Outputs to Generate" section has checkboxes for
+each type of content. Check or uncheck them to control what
+gets produced each cycle.
+
+  News Summary
+    Fetches headlines from BBC, AP, and CNN. If an Anthropic
+    API key is set, also generates an AI executive summary.
+    Output: news_YYYY-MM-DD_HHMM.txt (and .pdf, .html)
+
+  Weather Forecasts
+    Fetches 7-day forecasts from the National Weather Service
+    for major cities in each selected FEMA region.
+    Output: weather_rN_YYYY-MM-DD_HHMM.txt (one file per
+    selected region, where N is the region number)
+
+  Space Weather
+    Fetches solar flux, sunspot number, K-index, A-index,
+    and HF band conditions from NOAA. Also includes the
+    3-day NOAA space weather forecast.
+    Output: space_weather_YYYY-MM-DD_HHMM.txt
+
+  Emergency Alerts
+    Fetches active NWS weather alerts, recent USGS
+    earthquakes, FEMA disaster declarations, and active
+    wildfires.
+    Output: emergency_YYYY-MM-DD_HHMM.txt
+
+  Twitter Feed
+    Fetches recent posts from the configured official
+    emergency Twitter/X accounts. Requires a Twitter Bearer
+    Token to be set in Settings.
+    Output: twitter_YYYY-MM-DD_HHMM.txt
+
+  Power Outages
+    Fetches current utility outage data from the DOE/ORNL
+    ODIN system (Outage Data Initiative Nationwide), which
+    aggregates real-time reports from 300+ participating
+    utilities. Shows total customers without power, broken
+    down by state and top utilities, with each utility
+    identified by state using the EIA utility registry.
+    No API key required - the data is publicly available.
+    Output: power_outages_MMDD_HHMM.txt
+
+  Nextdoor (Local)  [only visible if module is enabled]
+    Fetches local community posts from Nextdoor for the
+    configured ZIP codes. Requires Nextdoor API approval.
+    Output: nextdoor_YYYY-MM-DD_HHMM.txt
+
+----------------------------------------------------------------
+3b. WEATHER REGION SELECTION
+----------------------------------------------------------------
+
+Next to the main checkboxes is a panel labeled "Weather
+Regions (FEMA)." It shows all 10 FEMA regions with
+individual checkboxes:
+
+  R1: Northeast       (CT, MA, ME, NH, RI, VT)
+  R2: NY/NJ           (NJ, NY, PR, VI)
+  R3: Mid-Atlantic    (DC, DE, MD, PA, VA, WV)
+  R4: Southeast       (AL, FL, GA, KY, MS, NC, SC, TN)
+  R5: Midwest         (IL, IN, MI, MN, OH, WI)
+  R6: South Central   (AR, LA, NM, OK, TX)
+  R7: Great Plains    (IA, KS, MO, NE)
+  R8: Mountain        (CO, MT, ND, SD, UT, WY)
+  R9: Southwest       (AZ, CA, HI, NV, Guam)
+  R10: Northwest      (AK, ID, OR, WA)
+
+By default, only R4 (Southeast) is checked. Use the "All"
+button to select all regions, or the "None" button to
+deselect all. Selecting more regions increases fetch time
+significantly. Only check the regions relevant to your net.
+
+Weather data is only fetched for checked regions, even if
+the "Weather Forecasts" checkbox is checked.
+
+----------------------------------------------------------------
+3c. RUNNING THE APP
+----------------------------------------------------------------
+
+There are three buttons in the control area:
+
+  Start Automatic Updates
+    Starts a background loop that generates all checked
+    outputs immediately, then repeats on the schedule set
+    in the Update Intervals section of Settings (default:
+    every 6 hours). The button changes to grayed out and
+    the Stop button becomes active.
+
+  Stop
+    Halts the automatic update loop. Any in-progress
+    generation will complete before stopping.
+
+  Generate Now
+    Runs a single generation cycle immediately, regardless
+    of the automatic schedule. Useful for on-demand updates
+    or testing. Does not affect the automatic loop if it
+    is already running.
+
+The Activity Log at the bottom of the tab shows real-time
+progress, including each file being fetched and generated,
+any errors, and confirmation messages when files are saved.
+
+----------------------------------------------------------------
+3d. POWER OUTAGE REPORT (DOE/ORNL ODIN)
+----------------------------------------------------------------
+
+The Power Outages checkbox triggers a report sourced from
+the DOE/ORNL ODIN system (Outage Data Initiative Nationwide),
+operated by Oak Ridge National Laboratory. ODIN collects
+real-time outage data from 300+ participating electric
+utilities across the country and makes it available via a
+public API endpoint (odin.ornl.gov).
+
+No API key or registration is required.
+
+GEOGRAPHICAL ENRICHMENT
+
+Each utility returned by ODIN includes an EIA utility ID
+(from the U.S. Energy Information Administration). The app
+uses a built-in lookup table derived from EIA Form 861 -
+the Annual Electric Power Industry Report - to map each
+utility to its primary state of operation. For any utility
+not in the lookup table, the app applies name-pattern
+inference (e.g., "HAWAIIAN ELECTRIC" -> HI, a utility
+containing "VERMONT" -> VT). This allows the report to
+group outages geographically without any external calls.
+
+The output file (power_outages_MMDD_HHMM.txt) contains:
+  - Total outages nationwide across all reporting utilities
+  - Number of utilities reporting vs. total monitored
+  - Plain-language summary naming the most-affected states
+  - OUTAGES BY STATE table: state code, outage count, and
+    number of utilities reporting in that state
+  - TOP UTILITIES table: state code, utility name, and
+    outage count for the 15 hardest-hit utilities
+  - Source attribution, timestamp, and coverage note
+
+Example output excerpt:
+
+  TOTAL OUTAGES : 5,842
+  UTILITIES     : 47 reporting / 312 monitored
+
+  Most affected: TX (2,100), FL (1,430), NC (890).
+
+  OUTAGES BY STATE:
+    ST      OUTAGES  UTILS
+    ------------------------
+    TX        2,100  3
+    FL        1,430  2
+    NC          890  4
+
+  TOP UTILITIES:
+    ST   UTILITY                           OUTAGES
+    ----------------------------------------------
+    TX   CENTERPOINT ENERGY                  1,043
+    FL   FLORIDA POWER & LIGHT CO              835
+
+Utilities whose state cannot be determined from either the
+EIA ID lookup or name inference are displayed with a "??"
+state code rather than being hidden. This allows you to
+identify unrecognized utilities and, if needed, add their
+EIA IDs to the lookup table in the source code.
+
+COVERAGE NOTE: ODIN covers only its participating utilities.
+Not every U.S. utility reports to ODIN, so the totals are
+a lower bound on actual national outages. The file footer
+always includes this caveat.
+
+This file is generated on the same schedule as all other
+Main tab reports. During an emergency event, increase the
+update frequency in Settings to get fresher data.
+
+
+================================================================
+4. SETTINGS TAB
+================================================================
+
+----------------------------------------------------------------
+4a. ANTHROPIC API KEY (AI SUMMARIES)
+----------------------------------------------------------------
+
+Step 1. Obtain an API key from console.anthropic.com.
+Step 2. Paste the key into the "Anthropic API Key" field.
+Step 3. Click "Set."
+Step 4. The log will confirm "Anthropic API key set."
+
+Without a key, News Summary outputs will contain headline
+lists only, with no AI executive summary section.
+
+----------------------------------------------------------------
+4b. TWITTER BEARER TOKEN
+----------------------------------------------------------------
+
+Step 1. Create a developer account at developer.twitter.com
+        and create a project to obtain a Bearer Token.
+        The free tier provides 500,000 tweets per month,
+        which is more than sufficient for this use.
+Step 2. Paste the token into the "Twitter Bearer Token" field.
+Step 3. Click "Set."
+Step 4. The log will confirm the token is set and show which
+        accounts will be monitored.
+
+The Twitter Feed checkbox on the Main tab will be
+automatically enabled when a valid token is set.
+
+----------------------------------------------------------------
+4c. TWITTER ACCOUNTS TO MONITOR
+----------------------------------------------------------------
+
+The "Twitter Accounts" field lists the handles to pull posts
+from. Default handles are:
+
+  NWS, fema, USGS_Quakes, NWSAlerts, CDCgov, NHC_Atlantic
+
+To change them:
+Step 1. Edit the field - enter handles separated by commas,
+        with no @ symbols and no spaces after commas.
+        Example: NWS,fema,USGS_Quakes,RedCross
+Step 2. Click "Update."
+
+You can update the handle list before or after setting the
+Bearer Token.
+
+----------------------------------------------------------------
+4d. NEXTDOOR CONFIGURATION
+----------------------------------------------------------------
+
+Nextdoor integration requires a Public Agency API key,
+which must be applied for through Nextdoor directly.
+
+Step 1. Enter your Nextdoor API key in the field provided.
+Step 2. Enter the ZIP codes to monitor, comma-separated.
+        Example: 30301,30308,30309
+Step 3. Click "Set" (or "Update" after initial setup).
+
+The Nextdoor checkbox on the Main tab will be automatically
+enabled when configured.
+
+----------------------------------------------------------------
+4e. OUTPUT DIRECTORY
+----------------------------------------------------------------
+
+All generated files are saved here. The default is:
+  C:\VarAC BBS
+
+To change it:
+Step 1. Click "Browse."
+Step 2. Select the desired folder.
+Step 3. The new path is shown and saved immediately.
+
+Point this to your VarAC BBS serving directory so that
+stations requesting content over the air receive the most
+recently generated files automatically.
+
+----------------------------------------------------------------
+4f. UPDATE INTERVALS
+----------------------------------------------------------------
+
+  Main Reports
+    How often the automatic update loop runs for news,
+    weather, space weather, emergency alerts, and Nextdoor.
+    Range: 1-24 hours. Default: 6 hours.
+
+  Twitter Feed
+    How often Twitter posts are fetched. This runs on its
+    own separate loop from the main reports.
+    Range: 1-12 hours. Default: 6 hours.
+
+Change the values using the up/down spinners. New intervals
+take effect at the start of the next cycle.
+
+----------------------------------------------------------------
+4g. WELFARE BOARD TIME WINDOWS
+----------------------------------------------------------------
+
+Time windows define when the system accepts incoming welfare
+check-ins. Check-ins received outside a configured window
+are automatically rejected and moved to the error folder.
+
+Up to three windows can be configured. Each window has:
+  - Name:  A label for this session (e.g., "Morning Net")
+  - Start: Start time in 24-hour HH:MM format
+  - End:   End time in 24-hour HH:MM format
+
+Leave the Name field blank to disable that window slot.
+
+Default configuration is a single 24/7 window:
+  Window 1: All Day   00:00 - 23:59
+  Window 2: (blank / disabled)
+  Window 3: (blank / disabled)
+
+Example net-based configuration:
+  Window 1: Morning Net   08:00 - 10:00
+  Window 2: Evening Net   19:00 - 21:00
+  Window 3: (blank / disabled)
+
+After making changes, click "Apply Time Windows." A
+confirmation dialog will show the active windows. Note that
+applying new windows resets the current session's check-in
+data, so do this before a net begins, not during.
+
+
+================================================================
+5. WELFARE BOARD TAB
+================================================================
+
+The Welfare Board tab manages the incoming welfare check-in
+system. It watches a folder for check-in files, validates
+them, and generates output reports automatically.
+
+----------------------------------------------------------------
+5a. FOLDER CONFIGURATION
+----------------------------------------------------------------
+
+Three folders must be set:
+
+  Monitor Folder
+    The folder where incoming welfare check-in .txt files
+    are placed. Typically this is your VarAC "Files in"
+    directory. The app watches this folder continuously
+    while monitoring is active.
+    Default: C:\Users\Facundo\Dropbox (Personal)\Ham Radio\
+             Digital Modes\VarAC\Files in
+
+  Archive Folder
+    Successfully processed check-in files are moved here
+    automatically. This keeps the monitor folder clean.
+    Default: ...\VarAC\Files in\welfare_archive
+
+  Error Folder
+    Check-in files that fail validation (missing fields,
+    wrong format, outside a time window, etc.) are moved
+    here. Each rejected file gets a companion .error.txt
+    file explaining why it was rejected.
+    Default: ...\VarAC\Files in\welfare_error
+
+To change any folder, click the "Browse" button next to it
+and select the desired directory.
+
+----------------------------------------------------------------
+5b. MONITORING STATUS
+----------------------------------------------------------------
+
+The "Current Status" section shows:
+
+  Current Window
+    Shows the name and time range of the active time
+    window (e.g., "Morning Net (08:00-10:00) - Active now!")
+    shown in green, or "No active window" in gray if
+    check-ins are not currently being accepted.
+    This updates automatically every minute.
+
+  Check-ins
+    The count of check-ins collected in the current window.
+    Updates in real time as new check-ins arrive.
+
+The Welfare Check-in Activity Log below shows a detailed
+real-time record of every file processed, including
+validation results, update detections, and file movements.
+
+----------------------------------------------------------------
+5c. STARTING AND STOPPING MONITORING
+----------------------------------------------------------------
+
+  Start Monitoring (▶)
+    Begins watching the Monitor Folder for new .txt files.
+    Any file placed in that folder is immediately picked up,
+    validated, and processed. The button becomes grayed out
+    and the Stop button becomes active.
+
+  Stop (⏹)
+    Stops the folder watcher. Files placed in the monitor
+    folder while stopped will not be processed until
+    monitoring is restarted.
+
+Best practice: Start monitoring a few minutes before a net
+begins and stop it after the net ends.
+
+----------------------------------------------------------------
+5d. VIEWING THE BOARD
+----------------------------------------------------------------
+
+  View Board (🌐)
+    Opens the welfare board HTML file in your default web
+    browser. The HTML file auto-refreshes every 30 seconds,
+    so you can leave it open during a net and it will update
+    as check-ins arrive. If no check-ins have been received
+    yet, a dialog will say the board has not been generated.
+
+The board is also saved as a .txt and .csv file in the
+output directory alongside the news and weather files.
+
+----------------------------------------------------------------
+5e. THE CHECK-IN TEMPLATE
+----------------------------------------------------------------
+
+  Template (📄)
+    Opens the welfare_checkin_template.txt file in your
+    default text editor. This is the blank form that
+    operators fill out and transmit via VarAC.
+
+The template format is:
+
+  CALLSIGN: [call sign]
+
+  NAME: [operator name]
+
+  LOCATION: [city, state]
+
+  STATUS: (SAFE / NEED ASSISTANCE / TRAFFIC)
+
+  POWER: (ON / OFF / GENERATOR)
+
+  MESSAGE: [optional free-text message]
+
+All fields except POWER and MESSAGE are required. POWER is
+optional but strongly recommended during any event involving
+infrastructure damage or storm response. Sending the template
+via VarAC to participating stations before the net ensures
+they use the correct format.
+
+
+================================================================
+6. HOW WELFARE CHECK-INS WORK (END-TO-END)
+================================================================
+
+----------------------------------------------------------------
+6a. SUBMITTING A CHECK-IN VIA VARAC
+----------------------------------------------------------------
+
+Step 1. The remote operator fills out the check-in template
+        as a plain text file on their computer.
+
+Step 2. They transmit the file to the BBS station using VarAC
+        file transfer. VarAC places the received file in the
+        "Files in" folder (the Monitor Folder).
+
+Step 3. The app detects the new file within seconds, reads it,
+        and validates every required field.
+
+Step 4. If valid, the check-in is added to the current
+        time window's record, all output files are regenerated
+        immediately, and the source file is moved to the
+        Archive folder.
+
+Step 5. If invalid (missing field, wrong status, wrong time
+        window), the file is moved to the Error folder and
+        a .error.txt companion file is written explaining the
+        problem. The activity log also shows the reason.
+
+The remote operator can resend a corrected file if needed.
+
+----------------------------------------------------------------
+6b. VALID STATUSES
+----------------------------------------------------------------
+
+The STATUS field must be exactly one of these three values
+(case-insensitive during parsing, stored in uppercase):
+
+  SAFE              Operator and household are okay.
+  NEED ASSISTANCE   Operator requires help of some kind.
+                    Use the MESSAGE field to describe the need.
+  TRAFFIC           Operator has a message to pass
+                    (traffic for the net).
+
+Any other value will fail validation and the file will be
+rejected.
+
+----------------------------------------------------------------
+6c. POWER STATUS FIELD
+----------------------------------------------------------------
+
+The optional POWER field in the check-in template lets
+operators report their power situation. Valid values are:
+
+  ON          Utility grid power is available.
+  OFF         No power - running on battery, candles, etc.
+  GENERATOR   Running on a generator or solar backup.
+
+If included, the power status appears in all three output
+formats:
+
+  TXT file  — shown inline on the check-in header line
+              (e.g., "KK4ODA(Benito) Atlanta, GA PWR:OFF")
+              and in the power summary line at the top of
+              the board (e.g., "PWR-OFF:2 PWR-GENERATOR:1")
+
+  HTML file — color-coded indicator next to each check-in:
+              ON = green, GENERATOR = amber, OFF = red
+
+  CSV file  — separate Power column for easy filtering
+
+Operators who omit the POWER field are still accepted.
+
+----------------------------------------------------------------
+6d. DUPLICATE AND UPDATE HANDLING
+----------------------------------------------------------------
+
+The system intelligently handles multiple check-ins from
+the same callsign within the same time window:
+
+  Exact Duplicate
+    If a second file from the same callsign contains
+    identical NAME, LOCATION, STATUS, and MESSAGE, it is
+    recognized as a retransmission and discarded silently.
+    The file is archived (not sent to error).
+
+  Update (Content Changed)
+    If the new file has the same callsign but any field
+    is different (e.g., status changed from SAFE to NEED
+    ASSISTANCE, or the message was revised), the system
+    records it as an update. The check-in record is updated
+    to show the new status and message, and the full
+    timestamped history of all check-ins from that callsign
+    is preserved in the output.
+
+In the output files, updated entries are marked [UPD1],
+[UPD2], etc., and the history is shown as a timestamp list
+with most recent check-in at the top:
+
+  2. KK4ODA(Fantasma Benito) Atlanta, GA [UPD1]
+     19:47 TRAF
+          Hurricane gale winds starting
+     19:30 OK
+          All systems nominal
+
+----------------------------------------------------------------
+6e. OUTPUT FILES GENERATED
+----------------------------------------------------------------
+
+Every time a new check-in is processed, the system
+immediately regenerates three output files:
+
+  welfare_YYYY-MM-DD_HHMM-HHMM.txt
+    Plain text summary of all check-ins for the current
+    window. Compact format designed for radio transmission.
+
+  welfare_board.html
+    Full-featured HTML board with color-coded status
+    indicators. Auto-refreshes in the browser every 30s.
+
+  welfare_YYYY-MM-DD_HHMM-HHMM.csv
+    Spreadsheet-compatible file with one row per check-in,
+    including all fields and timestamps.
+
+All three files are saved to the same output directory as
+the news and weather files (the VarAC BBS folder).
+
+
+================================================================
+7. OUTPUT FILE REFERENCE
+================================================================
+
+All output files are saved to the configured Output Directory
+(default: C:\VarAC BBS). File naming conventions:
+
+  news_YYYY-MM-DD_HHMM.txt          News summary (text)
+  news_YYYY-MM-DD_HHMM.pdf          News summary (PDF)
+  news_YYYY-MM-DD_HHMM.html         News summary (HTML)
+
+  weather_r4_YYYY-MM-DD_HHMM.txt    Weather for FEMA R4
+  weather_r4_YYYY-MM-DD_HHMM.pdf    (one set per selected region)
+
+  space_weather_YYYY-MM-DD_HHMM.txt  Space weather / HF bands
+  space_weather_YYYY-MM-DD_HHMM.pdf
+
+  emergency_YYYY-MM-DD_HHMM.txt     Emergency alerts (text)
+  emergency_YYYY-MM-DD_HHMM.html    Emergency alerts (HTML)
+
+  twitter_YYYY-MM-DD_HHMM.txt       Twitter/X feed
+  twitter_YYYY-MM-DD_HHMM.html
+
+  nextdoor_YYYY-MM-DD_HHMM.txt      Nextdoor local posts
+  nextdoor_YYYY-MM-DD_HHMM.html
+
+  power_outages_MMDD_HHMM.txt        DOE/ORNL ODIN outage report
+                                     (national + state + utility)
+
+  welfare_YYYY-MM-DD_HHMM-HHMM.txt  Welfare board (text)
+  welfare_board.html                 Welfare board (HTML, live)
+  welfare_YYYY-MM-DD_HHMM-HHMM.csv  Welfare board (CSV)
+
+The welfare HTML file is always named welfare_board.html
+(no timestamp) so the browser bookmark stays constant.
+
+
+================================================================
+8. TROUBLESHOOTING
+================================================================
+
+Check-ins are being rejected with "No active window"
+  - Verify the current time falls within a configured
+    Welfare Board Time Window on the Settings tab.
+  - Click "Apply Time Windows" if you recently made changes.
+  - The Current Window label on the Welfare Board tab shows
+    whether a window is active right now.
+
+Check-in rejected with validation error
+  - Open the .error.txt file in the Error folder to see
+    exactly which field failed.
+  - Common causes: missing CALLSIGN, NAME, LOCATION, or
+    STATUS field; STATUS value not one of SAFE, NEED
+    ASSISTANCE, or TRAFFIC; file encoding issues.
+  - Ask the remote operator to resend using the template.
+
+News summary contains headlines only, no executive summary
+  - The Anthropic API key is not set or is invalid.
+  - Go to Settings, re-enter the key, and click "Set."
+
+Weather output not generating for a region
+  - Confirm the region checkbox is checked on the Main tab.
+  - NWS API occasionally returns errors for individual
+    cities. The app skips failures and continues. If an
+    entire region is empty, try Generate Now again.
+
+Twitter feed not generating
+  - Confirm the Bearer Token is set and the log shows
+    confirmation.
+  - Check that the Twitter Feed checkbox is checked on
+    the Main tab.
+  - Rate limits on the free Twitter API tier are generous
+    but real. If you see rate limit errors in the log,
+    increase the Twitter Feed interval in Settings.
+
+Welfare board HTML not opening
+  - Click "View Board" only after at least one valid
+    check-in has been received. The file does not exist
+    until the first check-in is processed.
+
+Power outage report shows "Data unavailable"
+  - The DOE/ORNL ODIN API may be temporarily offline or
+    returning an unexpected format. This is uncommon but
+    can occur during major storm events when the system
+    is under high load.
+  - The report will still be saved with a note directing
+    users to check poweroutage.us for current information.
+  - Try Generate Now again in a few minutes.
+
+Power outage report shows many utilities with state "??"
+  - The utility's EIA ID was not found in the built-in
+    lookup table and the utility name did not match any
+    state pattern. The utility is still counted in the
+    national total and appears in the TOP UTILITIES list.
+  - To add a mapping: find the utility's EIA ID in the
+    ODIN response (logged to the Activity Log at debug
+    level) and add it to the EIA_STATE_LOOKUP dictionary
+    in the PowerOutageFetcher class in emcomm_bbs.py.
+
+App defaults to Downloads folder instead of C:\VarAC BBS
+  - The app tried to create C:\VarAC BBS but did not have
+    permission. Run the app as Administrator once to allow
+    it to create the folder, or manually create
+    C:\VarAC BBS and then restart the app.
+
+================================================================
+END OF USER GUIDE
+================================================================

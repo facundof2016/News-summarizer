@@ -1,0 +1,66 @@
+# Emcomm BBS - .gitignore
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── Personal configuration (contains API keys) ───────────────
+config.json
+user_config.json
+*.key
+.env
+
+# ── Generated output files (these go in C:\VarAC BBS, not the repo) ──
+news_*.txt
+news_*.pdf
+news_*.html
+weather_*.txt
+weather_*.pdf
+space_weather_*.txt
+space_weather_*.pdf
+emergency_*.txt
+emergency_*.html
+twitter_*.txt
+twitter_*.html
+nextdoor_*.txt
+nextdoor_*.html
+power_outages_*.txt
+welfare_*.txt
+welfare_*.csv
+welfare_board.html
+
+# ── Welfare Board working folders ────────────────────────────
+data/input/
+data/archive/
+data/output/
+data/error/
+welfare_archive/
+welfare_error/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Windows ──────────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Editors ──────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

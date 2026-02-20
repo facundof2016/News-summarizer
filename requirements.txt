@@ -1,0 +1,20 @@
+# Emcomm BBS - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# HTTP requests (news, weather, NOAA, ODIN API, etc.)
+requests>=2.28.0
+
+# HTML parsing (news headline scraping)
+beautifulsoup4>=4.11.0
+
+# AI news summaries (optional - only needed if using Anthropic API key)
+anthropic>=0.18.0
+
+# PDF generation
+reportlab>=3.6.0
+
+# Date/time parsing utilities
+python-dateutil>=2.8.2
+
+# Welfare Board file monitoring (auto-installed by RUN.bat if missing)
+watchdog>=3.0.0
