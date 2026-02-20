@@ -1,0 +1,11 @@
+CALLSIGN: W1ABC
+
+NAME: Jane Doe
+
+LOCATION: Boston, MA
+
+STATUS: NEED ASSISTANCE
+
+MESSAGE: Power out since 12:00. Need generator fuel. 
+Also need medical supplies - insulin. 
+Estimated 2-day supply remaining.
