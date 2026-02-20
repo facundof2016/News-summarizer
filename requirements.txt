@@ -1,0 +1,125 @@
+# Emergency News Summarizer - Python Dependencies
+# Version: 1.0.0
+# Install with: pip install -r requirements.txt
+
+# ============================================================================
+# CORE DEPENDENCIES (Required for basic functionality)
+# ============================================================================
+
+# HTTP requests for API calls and web scraping
+requests>=2.31.0
+
+# HTML parsing for news scraping
+beautifulsoup4>=4.12.0
+
+# ============================================================================
+# OPTIONAL DEPENDENCIES (Enhanced features)
+# ============================================================================
+
+# AI-powered news summaries (requires Anthropic API key)
+# Cost: ~$0.01 per summary | Free tier: $5 credits
+anthropic>=0.18.0
+
+# ============================================================================
+# BUNDLED WITH PYTHON (No installation needed)
+# ============================================================================
+
+# The following are included with standard Python installations:
+# - tkinter (GUI framework) - comes with Python on Windows
+# - datetime (date/time handling)
+# - threading (background tasks)
+# - json (JSON parsing)
+# - pathlib (file path handling)
+# - os (operating system interface)
+
+# ============================================================================
+# PLATFORM NOTES
+# ============================================================================
+
+# Windows 10/11: All dependencies work out of the box
+# Linux/macOS: May need to install tkinter separately:
+#   Ubuntu/Debian: sudo apt-get install python3-tk
+#   macOS: brew install python-tk@3.XX (or comes with official Python.org installer)
+
+# ============================================================================
+# INSTALLATION INSTRUCTIONS
+# ============================================================================
+
+# Standard installation:
+#   pip install -r requirements.txt
+
+# With specific Python version:
+#   pip3 install -r requirements.txt
+#   python3 -m pip install -r requirements.txt
+
+# In virtual environment (recommended for development):
+#   python -m venv venv
+#   venv\Scripts\activate  # Windows
+#   source venv/bin/activate  # Linux/macOS
+#   pip install -r requirements.txt
+
+# Upgrade existing packages:
+#   pip install --upgrade -r requirements.txt
+
+# ============================================================================
+# TROUBLESHOOTING
+# ============================================================================
+
+# If you get SSL certificate errors:
+#   pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+# If you get permission errors:
+#   pip install --user -r requirements.txt
+
+# To verify installations:
+#   pip list | grep -E "requests|beautifulsoup4|anthropic"
+
+# ============================================================================
+# OPTIONAL: Development Dependencies (not needed to run the app)
+# ============================================================================
+
+# Uncomment these if you're developing/testing:
+# pytest>=7.4.0           # Testing framework
+# black>=23.0.0           # Code formatter
+# flake8>=6.0.0           # Linting
+# pylint>=2.17.0          # Code analysis
+
+# ============================================================================
+# VERSION COMPATIBILITY
+# ============================================================================
+
+# Python Version: 3.8 or higher required
+# Tested on: Python 3.8, 3.9, 3.10, 3.11, 3.12
+# Operating Systems: Windows 10, Windows 11
+# Future support planned: Linux, macOS
+
+# ============================================================================
+# PACKAGE SIZES (Approximate download sizes)
+# ============================================================================
+
+# requests: ~100 KB
+# beautifulsoup4: ~200 KB
+# anthropic: ~50 KB
+# Total download: ~350 KB
+
+# ============================================================================
+# SECURITY NOTES
+# ============================================================================
+
+# Keep packages updated for security patches:
+#   pip install --upgrade requests beautifulsoup4 anthropic
+
+# Check for vulnerabilities:
+#   pip install safety
+#   safety check
+
+# ============================================================================
+# OFFLINE INSTALLATION
+# ============================================================================
+
+# To install on a machine without internet:
+# 1. On internet-connected machine:
+#    pip download -r requirements.txt -d packages/
+# 2. Transfer the 'packages' folder to offline machine
+# 3. On offline machine:
+#    pip install --no-index --find-links=packages -r requirements.txt
